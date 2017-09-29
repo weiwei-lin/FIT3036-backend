@@ -11,7 +11,7 @@ def generate_random_data():
 
     while True:
         yield (
-            round(normalvariate(36.8, 0.4), 1), # body_temperature
+            round(normalvariate(37.3, 0.7), 1), # body_temperature
             choice((0, 1)), # Cough
             choice((0, 1)), # Sore Throat
             choice((0, 1)), # Runny/Sniffy Nose
