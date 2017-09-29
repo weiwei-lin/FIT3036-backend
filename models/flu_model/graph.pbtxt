@@ -175,7 +175,7 @@ node {
     value {
       list {
         type: DT_INT64
-        type: DT_INT64
+        type: DT_DOUBLE
         type: DT_INT64
       }
     }
@@ -273,7 +273,7 @@ node {
   attr {
     key: "dtype"
     value {
-      type: DT_INT64
+      type: DT_DOUBLE
     }
   }
   attr {
@@ -327,7 +327,7 @@ node {
     value {
       list {
         type: DT_INT64
-        type: DT_INT64
+        type: DT_DOUBLE
         type: DT_INT64
       }
     }
@@ -684,7 +684,7 @@ node {
     value {
       list {
         type: DT_INT64
-        type: DT_INT64
+        type: DT_DOUBLE
         type: DT_INT64
       }
     }
@@ -709,7 +709,7 @@ node {
   attr {
     key: "SrcT"
     value {
-      type: DT_INT64
+      type: DT_DOUBLE
     }
   }
   attr {
@@ -16338,7 +16338,7 @@ node {
         dtype: DT_STRING
         tensor_shape {
         }
-        string_val: "_temp_4592e979662245ea91f257c1aa90f9b3/part"
+        string_val: "_temp_4bfca2b698994cb1a90de2c2e1d13516/part"
       }
     }
   }

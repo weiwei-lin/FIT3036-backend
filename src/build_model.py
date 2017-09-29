@@ -16,7 +16,7 @@ def main():
         reader = csv.reader(training_csv, delimiter=',')
         for row in reader:
             training_y.append(int(row.pop()))
-            training_x.append([int(num) for num in row])
+            training_x.append([float(num) for num in row])
 
     testing_x = []
     testing_y = []
@@ -24,11 +24,14 @@ def main():
         reader = csv.reader(testing_csv, delimiter=',')
         for row in reader:
             testing_y.append(int(row.pop()))
-            testing_x.append([int(num) for num in row])
+            testing_x.append([float(num) for num in row])
 
 
     # Specify that all features have real-value data
-    feature_columns = [tf.feature_column.numeric_column('x', shape=[8])]
+    feature_columns = [tf.feature_column.numeric_column(
+        'x',
+        shape=[8]
+    )]
 
     # Build 3 layer DNN with 10, 20, 10 units respectively.
     classifier = tf.estimator.DNNClassifier(

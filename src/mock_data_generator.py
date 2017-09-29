@@ -2,7 +2,7 @@
 Mock data generator
 """
 
-from random import choice, choices, uniform
+from random import choice, choices, uniform, normalvariate
 
 def generate_random_data():
     """
@@ -11,7 +11,7 @@ def generate_random_data():
 
     while True:
         yield (
-            choice((0, 1)), # Fever
+            round(normalvariate(36.8, 0.4), 1), # body_temperature
             choice((0, 1)), # Cough
             choice((0, 1)), # Sore Throat
             choice((0, 1)), # Runny/Sniffy Nose
@@ -27,9 +27,9 @@ def filter_data(random_data_generator):
     """
 
     for datum in random_data_generator:
-        fever, cough, sore_throat, runny_nose, body_ache, headaches, fatigue, chill = datum
-        if fever != headaches:
-            if uniform(0, 1) < 0.7:
+        body_temperature, cough, sore_throat, runny_nose, body_ache, headaches, fatigue, chill = datum
+        if body_temperature > uniform(37.6, 38.1) and headaches == 1:
+            if uniform(0, 1) * body_temperature / 36.8 < 0.7:
                 continue
         if cough != sore_throat:
             if uniform(0, 1) < 0.3:
@@ -42,10 +42,10 @@ def diagnose(symptoms) -> int:
     diagnose symptoms
     """
 
-    fever, cough, sore_throat, runny_nose, body_ache, headaches, fatigue, chill = symptoms
+    body_temperature, cough, sore_throat, runny_nose, body_ache, headaches, fatigue, chill = symptoms
 
     chance = 0
-    if fever == 1:
+    if body_temperature == 1:
         chance += 0.3
     if cough == 1:
         chance += 0.1
@@ -62,7 +62,7 @@ def diagnose(symptoms) -> int:
     if chill == 1:
         chance += 0.1
 
-    if cough == 1 and fever == 1:
+    if cough == 1 and body_temperature == 1:
         chance += 0.1
     if cough == 1 and runny_nose == 1:
         chance += 0.2
