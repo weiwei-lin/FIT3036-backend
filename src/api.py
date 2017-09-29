@@ -8,7 +8,7 @@ CORS(app)
 
 @app.route('/')
 def main():
-    fever = int(request.args.get('fever'))
+    body_temperature = float(request.args.get('body_temperature'))
     cough = int(request.args.get('cough'))
     sore_throat = int(request.args.get('sore-throat'))
     runny_nose = int(request.args.get('runny-nose'))
@@ -17,7 +17,7 @@ def main():
     fatigue = int(request.args.get('fatigue'))
     chill = int(request.args.get('chill'))
 
-    return jsonify(predict([fever, cough, sore_throat, runny_nose, body_ache, headaches, fatigue, chill]))
+    return jsonify(predict([body_temperature, cough, sore_throat, runny_nose, body_ache, headaches, fatigue, chill]))
 
 if __name__ == '__main__':
     app.run()
