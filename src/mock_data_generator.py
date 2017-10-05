@@ -28,7 +28,7 @@ def filter_data(random_data_generator):
 
     for datum in random_data_generator:
         body_temperature, cough, sore_throat, runny_nose, body_ache, headaches, fatigue, chill = datum
-        if body_temperature > uniform(37.6, 38.1) and headaches == 1:
+        if body_temperature > uniform(37.6, 38.1) and headaches == 0:
             if uniform(0, 1) * body_temperature / 36.8 < 0.7:
                 continue
         if cough != sore_throat:
@@ -45,7 +45,7 @@ def diagnose(symptoms) -> int:
     body_temperature, cough, sore_throat, runny_nose, body_ache, headaches, fatigue, chill = symptoms
 
     chance = 0
-    if body_temperature == 1:
+    if body_temperature > uniform(37.6, 38.1):
         chance += 0.3
     if cough == 1:
         chance += 0.1
@@ -62,8 +62,8 @@ def diagnose(symptoms) -> int:
     if chill == 1:
         chance += 0.1
 
-    if cough == 1 and body_temperature == 1:
-        chance += 0.1
+    if cough == 1 and body_temperature > uniform(37.6, 38.1):
+        chance += 0.1 * body_temperature / 38
     if cough == 1 and runny_nose == 1:
         chance += 0.2
     if fatigue == 1 and chill == 1:
