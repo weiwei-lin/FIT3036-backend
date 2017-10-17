@@ -1,6 +1,5 @@
 import numpy as np
 import tensorflow as tf
-import csv
 
 # Data sets
 TRAINING_FILENAME = 'training.csv'
