@@ -5,23 +5,21 @@ Mock data generator
 """
 
 from random import choice, choices, uniform, normalvariate
+from time import time
 from pymongo import MongoClient
 
-def generate_random_data():
-    """
-    function
-    """
 
+def generate_random_data():
     while True:
         yield {
             'body_temperature': round(normalvariate(37.3, 0.7), 1),
-            'cough': choice((False, True)),
-            'sore_throat': choice((False, True)),
-            'nose': choice(('normal', 'runny', 'stiffy')),
-            'body_ache': choice((False, True)),
-            'headaches': choice((False, True)),
-            'fatigue': choice((False, True)),
-            'chill': choice((False, True))
+            'cough': choice((0, 1)),
+            'sore_throat': choice((0, 1)),
+            'runny_nose': choice((0, 1)),
+            'body_ache': choice((0, 1)),
+            'headaches': choice((0, 1)),
+            'fatigue': choice((0, 1)),
+            'chill': choice((0, 1))
         }
 
 def filter_data(random_data_generator):
@@ -37,6 +35,8 @@ def filter_data(random_data_generator):
         if datum['cough'] != datum['sore_throat']:
             if uniform(0, 1) < 0.3:
                 continue
+        if datum['body_temperature'] < 36:
+            continue
         yield datum
 
 
@@ -52,7 +52,7 @@ def diagnose(symptoms) -> int:
         chance += 0.2
     if symptoms['sore_throat']:
         chance += 0.2
-    if symptoms['nose'] != 'normal':
+    if symptoms['runny_nose']:
         chance += 0.4
     if symptoms['body_ache']:
         chance += 0.1
@@ -65,7 +65,7 @@ def diagnose(symptoms) -> int:
 
     if symptoms['cough'] and symptoms['body_temperature'] > uniform(37.6, 38):
         chance += 0.2 * symptoms['body_temperature'] / 38
-    if symptoms['cough'] and symptoms['nose'] != 'normal':
+    if symptoms['cough'] and symptoms['runny_nose']:
         chance += 0.2
     if symptoms['fatigue'] and symptoms['chill']:
         chance += 0.2
@@ -73,7 +73,7 @@ def diagnose(symptoms) -> int:
     if chance < 0.4:
         return 0
     else:
-        return choices((0, 1), (0.1, chance))[0]
+        return choices((0, 1), (max(1 - chance, 0), chance))[0]
 
 
 def generate_data():
@@ -83,56 +83,59 @@ def generate_data():
 
     for filtered_datum in filter_data(generate_random_data()):
         is_flu = diagnose(filtered_datum)
-        yield {'symptoms': filtered_datum, 'result': is_flu}
+        yield {'symptoms': filtered_datum, 'result': is_flu, 'timestamp': time()}
 
-if __name__ == '__main__':
+
+def main():
     client = MongoClient('localhost', 27017)
     fit3036 = client.fit3036
-    meta_data = fit3036.meta_data
-    flu_data_train = fit3036.flu_data_train
-    flu_data_test = fit3036.flu_data_test
-    meta_data.delete_many({})
-    flu_data_train.delete_many({})
-    flu_data_test.delete_many({})
+    meta_collection = fit3036.meta
+    train_collection = fit3036.train
+    test_collection = fit3036.test
+    meta_collection.delete_many({})
+    train_collection.delete_many({})
+    test_collection.delete_many({})
 
-    meta_data.insert_many([
+    meta_collection.insert_many([
         {
-            'symptom_name': 'body_temperature',
-            'data_type': 'number'
+            'name': 'body_temperature',
+            'type': 'numeric'
         },
         {
-            'symptom_name': 'cough',
-            'data_type': 'boolean'
+            'name': 'cough',
+            'type': 'binary'
         },
         {
-            'symptom_name': 'sore_throat',
-            'data_type': 'boolean'
+            'name': 'sore_throat',
+            'type': 'binary'
         },
         {
-            'symptom_name': 'nose',
-            'data_type': 'enum',
-            'enum': ['normal', 'runny', 'stiffy']
+            'name': 'runny_nose',
+            'type': 'binary'
         },
         {
-            'symptom_name': 'body_ache',
-            'data_type': 'boolean'
+            'name': 'body_ache',
+            'type': 'binary'
         },
         {
-            'symptom_name': 'headaches',
-            'data_type': 'boolean'
+            'name': 'headaches',
+            'type': 'binary'
         },
         {
-            'symptom_name': 'fatigue',
-            'data_type': 'boolean'
+            'name': 'fatigue',
+            'type': 'binary'
         },
         {
-            'symptom_name': 'chill',
-            'data_type': 'boolean'
+            'name': 'chill',
+            'type': 'binary'
         }
     ])
 
-    for entry, _ in zip(generate_data(), range(1000)):
-        flu_data_train.insert_one(entry)
+    for entry, _ in zip(generate_data(), range(1000000)):
+        train_collection.insert_one(entry)
 
-    for entry, _ in zip(generate_data(), range(1000)):
-        flu_data_test.insert_one(entry)
+    for entry, _ in zip(generate_data(), range(200000)):
+        test_collection.insert_one(entry)
+
+if __name__ == '__main__':
+    main()

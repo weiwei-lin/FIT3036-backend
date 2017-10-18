@@ -1,62 +1,102 @@
+from time import time
+from random import choices
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
-from predict import predict
+import model
+from server_utilities.exceptions import InvalidInput
 
 app = Flask(__name__)
 CORS(app)
 
-@app.route('/predict')
-def main():
-    body_temperature = float(request.args.get('body_temperature'))
-    cough = int(request.args.get('cough'))
-    sore_throat = int(request.args.get('sore_throat'))
-    runny_nose = int(request.args.get('runny_nose'))
-    body_ache = int(request.args.get('body_ache'))
-    headaches = int(request.args.get('headaches'))
-    fatigue = int(request.args.get('fatigue'))
-    chill = int(request.args.get('chill'))
+@app.route('/predict', methods = ['POST'])
+def predict():
+    payload = request.get_json(force=True)
 
-    return jsonify(predict([body_temperature, cough, sore_throat, runny_nose, body_ache, headaches, fatigue, chill]))
+    for key, item in payload.items():
+        datum = model.meta_collection.find_one({'name': key})
 
-@app.route('/symptoms')
+        # TODO: better error handling
+        if datum is None:
+            raise InvalidInput(data={'message': 'invalid symptom name: {}'.format(key)})
+        # if datum['type'] == 'binary':
+        #     raise InvalidInput(data={'message': 'invalid input'})
+
+    return jsonify(model.predict(payload))
+
+
+@app.route('/symptoms', methods = ['GET'])
 def get_symptoms():
-    symptoms = {
-        'body_temperature': {
-            'name': 'Body Temperature',
-            'type': 'numeric'
-        },
-        'cough': {
-            'name': 'cough',
-            'name': 'Cough',
-            'type': 'binary'
-        },
-        'sore_throat': {
-            'name': 'Sore Throat',
-            'type': 'binary'
-        },
-        'runny_nose': {
-            'name': 'Runny Nose',
-            'type': 'binary'
-        },
-        'body_ache': {
-            'name': 'Body Ache',
-            'type': 'binary'
-        },
-        'headaches': {
-            'name': 'Headaches',
-            'type': 'binary'
-        },
-        'fatigue': {
-            'name': 'Fatigue',
-            'type': 'binary'
-        },
-        'chill': {
-            'name': 'Chill',
-            'type': 'binary'
-        }
+    cursor = model.meta_collection.find({})
+    meta = []
+    for datum in cursor:
+        meta.append({'name': datum['name'], 'type': datum['type']})
+    return jsonify(meta)
+
+
+@app.route('/add_symptom', methods = ['POST'])
+def add_symptoms():
+    payload = request.get_json(force=True)
+    try:
+        symptom_name = payload['symptom_name']
+        data_type = payload['data_type']
+        if data_type not in ['binary', 'numeric']:
+            raise InvalidInput()
+    except KeyError:
+        raise InvalidInput()
+
+    entry = model.meta_collection.find_one({'symptom_name': symptom_name})
+    if entry is not None:
+        raise InvalidInput(data={'message': 'symptom already exists'})
+
+    model.meta_collection.insert_one({
+        'symptom_name': symptom_name,
+        'data_type': data_type
+    })
+
+
+@app.route('/accuracy', methods = ['POST'])
+def accuracy():
+    payload = request.get_json(force=True)
+    rate = model.accuracy(payload)
+    return jsonify({'accuracy': rate})
+
+
+@app.route('/add_knowledge', methods = ['POST'])
+def add_knowledge():
+    payload = request.get_json(force=True)
+    try:
+        symptoms = payload['symptoms']
+        timestamp = time()
+        result = payload['result']
+        if result == 'yes':
+            result = 1
+        elif result == 'no':
+            result = 0
+        else:
+            raise InvalidInput()
+    except KeyError:
+        raise InvalidInput()
+
+    entry = {
+        'symptoms': symptoms,
+        'timestamp': timestamp,
+        'result': result
     }
-    return jsonify(symptoms)
+    if choices([True, False], [1, 5])[0]:
+        model.test_collection.insert_one(entry)
+    else:
+        model.train_collection.insert_one(entry)
+
+    return jsonify({})
+
+
+@app.errorhandler(InvalidInput)
+def handle_invalid_usage(error):
+    response = jsonify(error.data)
+    response.status_code = error.status_code
+    return response
 
 if __name__ == '__main__':
     app.run()
