@@ -117,8 +117,6 @@ def accuracy(symptom_keys_itr) -> float:
     model_datum = model_collection.find_one({'name': model_name})
     print(model_datum)
     if model_datum is not None:
-        print(model_datum['accuracy_timestamp'] > timestamp - 60 * 60 * 24)
-    if model_datum is not None and model_datum['accuracy_timestamp'] > timestamp - 60 * 60 * 24:
         return model_datum['accuracy']
 
     classifier, _ = get_classifier(key_list)
